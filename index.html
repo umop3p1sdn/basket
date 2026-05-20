@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>Basketball Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --org:#f4831f;--org2:#c85e00;--org-glow:rgba(244,131,31,0.25);
+  --grn:#22c55e;--grn2:#16a34a;--red:#ef4444;--red2:#b91c1c;
+  --bg:#080808;--bg2:#111;--bg3:#171717;--bg4:#1e1e1e;--bg5:#252525;
+  --bdr:#1f1f1f;--bdr2:#2a2a2a;--bdr3:#333;
+  --txt:#f0f0f0;--txt2:#aaa;--txt3:#666;
+}
+html{height:100%;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--txt);font-family:'Barlow',sans-serif;min-height:100%;overflow-x:hidden;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{transform:scale(.85);opacity:0}70%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+input,textarea,button,select{font-family:'Barlow',sans-serif;-webkit-appearance:none;}
+input::placeholder,textarea::placeholder{color:var(--txt3);}
+input:focus,textarea:focus{outline:none;border-color:var(--org)!important;box-shadow:0 0 0 3px var(--org-glow);}
+button{cursor:pointer;border:none;transition:opacity .15s,transform .1s;}
+button:active{opacity:.8;transform:scale(.97);}
+a{text-decoration:none;color:inherit;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#222;border-radius:2px;}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh;animation:fadeIn .2s ease;}
+.screen.active{display:block;}
+#screen-loader.active,#screen-pin.active{display:flex;}
+
+/* ── LOADER ── */
+#screen-loader{align-items:center;justify-content:center;flex-direction:column;gap:20px;background:var(--bg);}
+.spin{width:44px;height:44px;border:3px solid #1a1a1a;border-top:3px solid var(--org);border-radius:50%;animation:spin .8s linear infinite;}
+.loader-txt{color:var(--txt3);font-size:13px;letter-spacing:.5px;}
+
+/* ══════════════════════════════════════
+   HOME SCREEN
+══════════════════════════════════════ */
+#screen-home{background:var(--bg);}
+.home-hero{
+  background:linear-gradient(170deg,#120800 0%,#0a0a0a 55%);
+  padding:56px 24px 36px;text-align:center;position:relative;overflow:hidden;
+  border-bottom:1px solid var(--bdr);
+}
+.home-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% -10%,rgba(244,131,31,.18) 0%,transparent 65%);
+}
+.home-hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--org),transparent);
+  opacity:.4;
+}
+.hero-ball{font-size:56px;display:block;margin-bottom:14px;position:relative;z-index:1;}
+.hero-label{font-size:11px;font-weight:700;color:var(--org);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;position:relative;z-index:1;}
+.hero-title{font-size:42px;font-weight:900;color:#fff;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;line-height:.95;position:relative;z-index:1;}
+.hero-sub{font-size:13px;color:var(--txt3);margin-top:10px;font-weight:500;position:relative;z-index:1;}
+
+.home-body{padding:24px 16px 16px;max-width:500px;margin:0 auto;}
+.section-label{font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--bdr2);}
+
+.teams-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.team-btn{
+  width:100%;background:var(--bg3);border:1px solid var(--bdr2);border-radius:16px;
+  padding:16px 20px;display:flex;align-items:center;gap:14px;
+  text-align:left;position:relative;overflow:hidden;
+  transition:border-color .2s,transform .15s,box-shadow .2s;
+}
+.team-btn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--org);border-radius:16px 0 0 16px;}
+.team-btn:active{transform:scale(.98);box-shadow:0 0 0 1px var(--org);}
+.team-btn-emoji{font-size:26px;flex-shrink:0;}
+.team-btn-info{flex:1;min-width:0;}
+.team-btn-name{font-size:18px;font-weight:800;color:#fff;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.team-btn-meta{font-size:12px;color:var(--txt3);margin-top:2px;font-weight:500;}
+.team-btn-arr{color:var(--org);font-size:22px;font-weight:300;flex-shrink:0;}
+
+.no-teams-box{text-align:center;padding:36px 20px;color:var(--txt3);}
+.no-teams-icon{font-size:44px;display:block;margin-bottom:12px;opacity:.3;}
+.no-teams-txt{font-size:14px;line-height:1.6;}
+
+.btn-new{
+  width:100%;padding:17px;
+  background:linear-gradient(135deg,var(--org) 0%,var(--org2) 100%);
+  border-radius:14px;color:#fff;font-size:16px;font-weight:800;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 6px 24px var(--org-glow);
+}
+
+.home-footer{text-align:center;padding:28px 16px 24px;color:var(--txt3);font-size:11px;letter-spacing:.3px;}
+
+/* ══════════════════════════════════════
+   PIN SCREEN
+══════════════════════════════════════ */
+#screen-pin{
+  background:radial-gradient(ellipse at 50% 0%,#1a0d00 0%,var(--bg) 60%);
+  align-items:center;justify-content:center;flex-direction:column;
+  padding:24px;min-height:100vh;
+}
+.pin-wrap{width:100%;max-width:320px;animation:pop .3s ease;}
+.pin-team-emoji{font-size:48px;display:block;text-align:center;margin-bottom:10px;}
+.pin-team-name{font-size:28px;font-weight:900;color:#fff;font-family:'Barlow Condensed',sans-serif;text-align:center;margin-bottom:4px;}
+.pin-sub{font-size:13px;color:var(--txt3);text-align:center;margin-bottom:32px;}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:32px;}
+.pin-dot{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid var(--bdr3);background:transparent;
+  transition:all .15s;
+}
+.pin-dot.filled{background:var(--org);border-color:var(--org);box-shadow:0 0 10px var(--org-glow);}
+.pin-dot.error{background:var(--red);border-color:var(--red);animation:shake .4s ease;}
+.pin-dot.ok{background:var(--grn);border-color:var(--grn);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.pin-key{
+  padding:20px 0;background:var(--bg4);border:1px solid var(--bdr2);
+  border-radius:14px;color:#fff;font-size:24px;font-weight:700;
+  font-family:'Barlow Condensed',sans-serif;transition:all .1s;
+}
+.pin-key:active{background:var(--bg5);border-color:var(--org);transform:scale(.95);}
+.pin-key.del{color:var(--txt3);font-size:20px;}
+.pin-key.empty{background:transparent;border-color:transparent;cursor:default;}
+.pin-msg{height:20px;text-align:center;font-size:13px;font-weight:600;margin-bottom:8px;}
+.pin-back{background:transparent;color:var(--txt3);font-size:13px;font-weight:600;padding:10px;width:100%;text-align:center;}
+
+/* ══════════════════════════════════════
+   CREATE SCREEN
+══════════════════════════════════════ */
+#screen-create{background:var(--bg);}
+.top-bar{
+  background:var(--bg2);border-bottom:1px solid var(--bdr);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:50;
+}
+.back-btn{
+  width:36px;height:36px;background:var(--bg4);border:1px solid var(--bdr2);
+  border-radius:10px;color:var(--txt2);font-size:18px;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;
+}
+.top-bar-title{font-size:18px;font-weight:800;color:#fff;font-family:'Barlow Condensed',sans-serif;}
+.create-body{padding:20px 16px 48px;max-width:480px;margin:0 auto;}
+.field-g{margin-bottom:22px;}
+.lbl{display:block;font-size:10px;font-weight:800;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.inp{
+  width:100%;background:var(--bg4);border:1.5px solid var(--bdr2);
+  border-radius:12px;color:#fff;font-size:15px;padding:13px 14px;
+  transition:border-color .15s,box-shadow .15s;
+}
+textarea.inp{resize:vertical;line-height:1.6;}
+.pin-row{display:flex;gap:10px;justify-content:center;}
+.pin-box{
+  width:56px;height:64px;background:var(--bg4);border:1.5px solid var(--bdr2);
+  border-radius:12px;color:#fff;font-size:26px;font-weight:900;
+  text-align:center;font-family:'Barlow Condensed',sans-serif;
+  transition:border-color .15s,box-shadow .15s;
+}
+.pin-box:focus{border-color:var(--org);box-shadow:0 0 0 3px var(--org-glow);}
+.btn-primary{
+  width:100%;padding:17px;
+  background:linear-gradient(135deg,var(--org),var(--org2));
+  border-radius:14px;color:#fff;font-size:16px;font-weight:800;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;
+  box-shadow:0 6px 24px var(--org-glow);
+}
+.btn-danger-outline{
+  width:100%;padding:14px;background:transparent;
+  border:1.5px solid rgba(239,68,68,.4);color:var(--red);
+  border-radius:12px;font-size:14px;font-weight:700;margin-top:10px;
+}
+
+/* ══════════════════════════════════════
+   APP SCREEN
+══════════════════════════════════════ */
+#screen-app{background:var(--bg);}
+.app-header{
+  background:rgba(10,10,10,.95);
+  border-bottom:1px solid var(--bdr);
+  position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.app-hdr-top{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;}
+.app-emoji{font-size:24px;flex-shrink:0;}
+.app-hdr-info{flex:1;min-width:0;}
+.app-team-nm{
+  font-size:17px;font-weight:800;color:#fff;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.app-match-txt{font-size:11px;color:var(--org);font-weight:700;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.app-no-match{font-size:11px;color:var(--txt3);margin-top:1px;}
+.hdr-btns{display:flex;gap:6px;}
+.hdr-btn{
+  background:var(--bg4);border:1px solid var(--bdr2);color:var(--txt3);
+  padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;
+  white-space:nowrap;
+}
+.app-nav{display:flex;border-top:1px solid var(--bdr);}
+.nav-btn{
+  flex:1;padding:9px 2px 10px;background:transparent;color:var(--txt3);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+  min-width:0;
+}
+.nav-btn .ni{font-size:16px;}
+.nav-btn .nl{font-size:8px;font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.nav-btn.active{color:var(--org);border-bottom:2px solid var(--org);}
+.app-main{padding:16px 14px 72px;max-width:560px;margin:0 auto;}
+
+/* ── TAB PANES ── */
+.pane{display:none;}
+.pane.active{display:block;animation:fadeUp .2s ease;}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:#1c1c1c;border:1px solid var(--org);color:#fff;
+  padding:9px 20px;border-radius:24px;font-size:13px;font-weight:600;
+  z-index:9999;white-space:nowrap;display:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  animation:slideDown .2s ease;
+}
+
+/* ── CARDS ── */
+.card{
+  background:var(--bg3);border-radius:16px;padding:16px;
+  border:1px solid var(--bdr);margin-bottom:12px;
+}
+.card-title{
+  font-size:14px;font-weight:800;color:#fff;margin-bottom:16px;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title::before{content:'';width:3px;height:16px;background:var(--org);border-radius:2px;}
+
+/* ── SECTION HEAD ── */
+.sec-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.sec-icon{font-size:18px;}
+.sec-title{font-weight:700;font-size:15px;flex:1;color:#fff;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;}
+.badge{
+  background:rgba(244,131,31,.12);border:1px solid rgba(244,131,31,.3);
+  color:var(--org);font-size:11px;font-weight:700;padding:3px 9px;
+  border-radius:20px;white-space:nowrap;
+}
+.add-btn{
+  background:transparent;border:1.5px solid var(--org);color:var(--org);
+  padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;
+  white-space:nowrap;
+}
+.empty-state{color:var(--txt3);font-size:13px;font-style:italic;padding:4px 0;}
+
+/* ── FORM FIELDS ── */
+.field-row{margin-bottom:14px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.toggle-row{display:flex;gap:8px;}
+.t-btn{
+  flex:1;padding:11px 0;background:var(--bg4);border:1.5px solid var(--bdr2);
+  border-radius:10px;color:var(--txt2);font-size:13px;font-weight:700;
+  transition:all .15s;
+}
+.t-btn.on{border-color:var(--org);background:rgba(244,131,31,.1);color:#fff;}
+.match-prev{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  background:var(--bg2);border-radius:12px;padding:14px;margin-top:12px;
+  border:1px solid var(--bdr);
+}
+.mp-team{flex:1;font-size:16px;font-weight:800;color:#fff;text-align:center;font-family:'Barlow Condensed',sans-serif;}
+.mp-vs{font-size:11px;font-weight:900;color:var(--org);background:rgba(244,131,31,.12);padding:4px 10px;border-radius:6px;border:1px solid rgba(244,131,31,.2);}
+.maps-btn{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(34,197,94,.06);border:1.5px solid rgba(34,197,94,.3);
+  border-radius:10px;padding:12px 14px;margin-top:10px;color:var(--grn);
+  font-weight:700;font-size:14px;
+}
+.maps-arr{margin-left:auto;opacity:.6;}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  display:flex;align-items:center;
+  background:var(--bg4);border:1.5px solid var(--bdr2);
+  border-radius:10px;overflow:hidden;transition:border-color .15s,background .15s;
+}
+.chip.on{border-color:var(--org);background:rgba(244,131,31,.08);}
+.chip-txt{padding:8px 12px;font-size:13px;font-weight:600;color:var(--txt2);cursor:pointer;}
+.chip.on .chip-txt{color:#fff;}
+.chip-del{padding:8px 10px;color:var(--txt3);font-size:16px;border-left:1px solid var(--bdr2);cursor:pointer;}
+
+/* ── PLAYERS ── */
+.player-hint{font-size:11px;color:var(--txt3);margin-bottom:10px;line-height:1.5;}
+.pgrid{display:flex;flex-direction:column;gap:7px;}
+.prow{
+  display:flex;align-items:center;border-radius:12px;overflow:hidden;
+  border:1.5px solid var(--bdr2);background:var(--bg4);transition:all .15s;
+}
+.prow.green{border-color:var(--grn);background:rgba(34,197,94,.06);}
+.prow.red{border-color:var(--red);background:rgba(239,68,68,.06);}
+.prow.none{opacity:.4;}
+.pcheck{padding:11px 12px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
+.cb{
+  width:22px;height:22px;border:2px solid var(--bdr3);border-radius:6px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;flex-shrink:0;transition:all .15s;
+}
+.cb.green{background:var(--grn);border-color:var(--grn);color:#fff;}
+.cb.red{background:var(--red);border-color:var(--red);color:#fff;}
+.pname{flex:1;font-size:14px;font-weight:600;color:var(--txt);padding:11px 4px 11px 0;cursor:pointer;}
+.att-btns{display:flex;gap:5px;margin-right:8px;}
+.att-btn{
+  width:30px;height:30px;border:1.5px solid var(--bdr2);background:transparent;
+  border-radius:8px;font-size:14px;font-weight:700;color:var(--txt3);transition:all .15s;
+}
+.att-btn.green{background:rgba(34,197,94,.1);border-color:var(--grn);color:var(--grn);}
+.att-btn.red{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red);}
+.row-del{padding:11px 12px;color:var(--txt3);font-size:16px;border-left:1px solid var(--bdr2);cursor:pointer;flex-shrink:0;}
+.player-legend{display:flex;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--txt3);gap:12px;}
+.leg-item{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.warn-box{margin-top:10px;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.25);border-radius:10px;padding:9px 13px;font-size:12px;color:#eab308;}
+
+/* ── SCORE ── */
+.score-banner{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:14px;
+  padding:14px 18px;margin-bottom:16px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.score-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--org),transparent);}
+.sb-match{font-size:18px;font-weight:800;color:#fff;font-family:'Barlow Condensed',sans-serif;}
+.sb-meta{font-size:12px;color:var(--txt3);margin-top:3px;}
+.scoreboard{display:flex;gap:12px;position:relative;}
+.score-team{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.team-inp{
+  width:100%;background:var(--bg3);border:1px solid var(--bdr2);border-radius:10px;
+  color:#fff;font-size:13px;font-weight:700;padding:9px;text-align:center;
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;
+}
+.score-num{
+  font-size:96px;font-weight:900;color:#fff;line-height:1;
+  font-family:'Barlow Condensed',sans-serif;
+  text-shadow:0 0 40px rgba(244,131,31,.15);
+}
+.score-sep{text-align:center;font-size:60px;font-weight:900;color:var(--bg5);font-family:'Barlow Condensed',sans-serif;margin:-12px 0;pointer-events:none;}
+.score-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;width:100%;}
+.s-btn{
+  padding:14px 0;background:var(--org);border:none;color:#fff;
+  border-radius:10px;font-size:18px;font-weight:800;
+  font-family:'Barlow Condensed',sans-serif;
+}
+.s-btn.min{grid-column:span 3;background:var(--bg4);color:var(--txt3);}
+.tafel-strip{
+  display:flex;align-items:center;gap:8px;background:var(--bg3);
+  border:1px solid var(--bdr);border-radius:10px;padding:10px 14px;
+  margin-top:14px;flex-wrap:wrap;
+}
+.tafel-lbl{color:var(--txt3);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;}
+.tafel-pill{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.25);color:#eab308;font-size:12px;font-weight:700;padding:4px 11px;border-radius:20px;}
+.reset-sm{
+  margin-top:14px;width:100%;background:transparent;
+  border:1px solid var(--bdr2);color:var(--txt3);padding:11px;
+  border-radius:10px;font-size:13px;font-weight:600;
+}
+
+/* ── ROOSTER ── */
+.r-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+.r-title{font-size:24px;font-weight:900;color:#fff;font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;}
+.r-sub{font-size:12px;color:var(--txt3);margin-top:3px;}
+.r-badge{background:rgba(244,131,31,.1);border:1px solid rgba(244,131,31,.25);color:var(--org);font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;}
+.t-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--bdr);}
+table{width:100%;border-collapse:collapse;}
+.th-r{padding:11px 0;text-align:center;width:48px;font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;background:#0d0d0d;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
+.th{padding:11px 14px;text-align:left;font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;background:#0d0d0d;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;border-left:1px solid var(--bdr);}
+.td-r{padding:11px 0;text-align:center;vertical-align:middle;border-bottom:1px solid #0f0f0f;}
+.td-v,.td-b{padding:9px 14px;vertical-align:top;border-left:1px solid #0f0f0f;border-bottom:1px solid #0f0f0f;}
+.r-num{width:30px;height:30px;border-radius:50%;background:var(--org);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;margin:0 auto;font-family:'Barlow Condensed',sans-serif;}
+.sp-row{display:flex;align-items:center;gap:8px;padding:2px 0;}
+.sp-nm{font-size:13px;font-weight:600;color:var(--txt);}
+.sp-nm-b{font-size:13px;font-weight:500;color:var(--txt3);}
+.dot-g{width:7px;height:7px;border-radius:50%;background:var(--grn);flex-shrink:0;}
+.dot-w{width:7px;height:7px;border-radius:50%;background:#3a3a3a;flex-shrink:0;}
+.legend-row{margin-top:12px;background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;}
+.leg-i{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--txt3);}
+
+/* ── CARPOOL ── */
+.cp-card{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:14px;
+  padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+}
+.cp-name{font-size:16px;font-weight:700;color:#fff;margin-bottom:5px;}
+.cp-seats{display:flex;align-items:center;gap:4px;}
+.cp-count{font-size:13px;color:var(--org);font-weight:700;margin-left:5px;}
+.cp-del{
+  background:var(--bg4);border:1px solid var(--bdr2);color:var(--txt3);
+  width:34px;height:34px;border-radius:10px;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+}
+.empty-cp{text-align:center;padding:36px 20px;}
+.empty-cp-icon{font-size:44px;display:block;margin-bottom:12px;opacity:.3;}
+.add-btn-lg{
+  background:linear-gradient(135deg,var(--org),var(--org2));border:none;
+  color:#fff;padding:13px 20px;border-radius:12px;font-size:15px;
+  font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;
+}
+
+/* ── OVERVIEW ── */
+.ov-match-box{
+  background:var(--bg2);border-radius:14px;padding:16px 18px;margin-bottom:14px;
+  border:1px solid var(--bdr);position:relative;overflow:hidden;
+}
+.ov-match-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--org),transparent);opacity:.5;}
+.ov-matchline{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ov-team{flex:1;font-size:18px;font-weight:800;color:#fff;font-family:'Barlow Condensed',sans-serif;}
+.ov-vs{font-size:11px;font-weight:900;color:var(--org);background:rgba(244,131,31,.1);padding:3px 10px;border-radius:6px;border:1px solid rgba(244,131,31,.2);}
+.ov-metas{display:flex;gap:10px;flex-wrap:wrap;}
+.ov-meta{font-size:12px;color:var(--txt3);font-weight:600;display:flex;align-items:center;gap:4px;}
+.ov-loc{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.ov-loc-txt{font-size:13px;color:var(--txt3);}
+.maps-mini{color:var(--grn);font-size:12px;font-weight:700;padding:4px 10px;border:1px solid rgba(34,197,94,.3);border-radius:8px;}
+.ov-divider{border:none;border-top:1px solid var(--bdr);margin:0;}
+.ov-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bdr);}
+.ov-block{padding:12px 0;border-bottom:1px solid var(--bdr);}
+.ov-lbl{font-size:10px;font-weight:800;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;}
+.ov-val{font-size:14px;font-weight:600;color:var(--txt);}
+.ov-players-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;}
+.ov-player{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--txt2);}
+.ov-num{width:22px;height:22px;background:var(--org);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex-shrink:0;}
+.ov-score{font-size:28px;font-weight:900;color:#fff;font-family:'Barlow Condensed',sans-serif;}
+.refresh-btn{
+  width:100%;margin-top:16px;padding:13px;background:var(--org);
+  color:#fff;border-radius:12px;font-size:15px;font-weight:800;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;
+}
+.ov-tafel-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+
+/* ══════════════════════════════════════
+   MODALS
+══════════════════════════════════════ */
+.modal-ov{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;
+  z-index:9000;padding:20px;backdrop-filter:blur(4px);
+}
+.modal-ov.open{display:flex;animation:fadeIn .2s ease;}
+.modal-box{
+  background:#1a1a1a;border:1px solid var(--bdr3);border-radius:20px;
+  padding:26px;width:100%;max-width:340px;animation:pop .25s ease;
+}
+.modal-ttl{font-size:20px;font-weight:800;color:#fff;margin-bottom:18px;font-family:'Barlow Condensed',sans-serif;}
+.modal-btns{display:flex;gap:10px;margin-top:20px;}
+.btn-cancel{flex:1;padding:12px 0;background:var(--bg4);border:1px solid var(--bdr2);color:var(--txt3);border-radius:10px;font-size:14px;font-weight:600;}
+.btn-ok{flex:1;padding:12px 0;background:var(--org);color:#fff;border-radius:10px;font-size:14px;font-weight:700;font-family:'Barlow Condensed',sans-serif;}
+.btn-ok.red{background:var(--red);}
+.seat-row{display:flex;gap:8px;margin-top:8px;}
+.seat-btn{flex:1;padding:14px 0;background:var(--bg4);border:1.5px solid var(--bdr2);border-radius:10px;color:var(--txt3);font-size:18px;font-weight:700;}
+.seat-btn.on{background:rgba(244,131,31,.1);border-color:var(--org);color:#fff;}
+
+/* ── PIN CHECK MODAL ── */
+.pin-check-box{text-align:center;}
+.pin-check-box .pin-pad{max-width:260px;margin:0 auto 12px;}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="screen-loader" class="screen active">
+  <div class="spin"></div>
+  <div class="loader-txt">Laden...</div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen">
+  <div class="home-hero">
+    <span class="hero-ball">🏀</span>
+    <div class="hero-title" style="
+      color: var(--org);
+      -webkit-text-stroke: 1.5px #7a3500;
+      text-shadow: 2px 2px 8px rgba(0,0,0,.8), 0 0 30px rgba(244,131,31,.2);
+    ">Basketball Manager</div>
+    <div class="hero-sub">Selecteer je team om te beginnen</div>
+  </div>
+  <div class="home-body">
+    <div class="section-label">Teams</div>
+    <div class="teams-list" id="teams-list"></div>
+    <button class="btn-new" onclick="showCreate()">
+      <span style="font-size:20px;font-weight:300">+</span> Nieuw team aanmaken
+    </button>
+  </div>
+  <div class="home-footer">© Sjoerd v Room — All rights reserved</div>
+</div>
+
+<!-- PIN -->
+<div id="screen-pin" class="screen">
+  <div class="pin-wrap">
+    <span class="pin-team-emoji" id="pin-emoji">🏀</span>
+    <div class="pin-team-name" id="pin-name">Team</div>
+    <div class="pin-sub">Voer de 4-cijferige code in</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key empty" disabled></button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+    </div>
+    <div class="pin-msg" id="pin-msg"></div>
+    <button class="pin-back" onclick="showHome()">← Terug naar teams</button>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div id="screen-create" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="showHome()">←</button>
+    <div class="top-bar-title">Nieuw team aanmaken</div>
+  </div>
+  <div class="create-body">
+    <div class="field-g">
+      <label class="lbl">Teamnaam</label>
+      <input class="inp" id="create-name" placeholder="bijv. Leeuwen U10" maxlength="30"
+        onkeydown="if(event.key==='Enter')document.getElementById('ps1').focus()"/>
+    </div>
+    <div class="field-g">
+      <label class="lbl">4-cijferige toegangscode</label>
+      <div class="pin-row">
+        <input class="pin-box" id="ps1" maxlength="1" type="tel" oninput="pnext(this,'ps2')"/>
+        <input class="pin-box" id="ps2" maxlength="1" type="tel" oninput="pnext(this,'ps3')"/>
+        <input class="pin-box" id="ps3" maxlength="1" type="tel" oninput="pnext(this,'ps4')"/>
+        <input class="pin-box" id="ps4" maxlength="1" type="tel" oninput="pnext(this,null)"/>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="createTeam()">✓ Team aanmaken</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app" class="screen">
+  <div class="app-header">
+    <div class="app-hdr-top">
+      <span class="app-emoji" id="app-emoji">🏀</span>
+      <div class="app-hdr-info">
+        <div class="app-team-nm" id="app-team-nm">Team</div>
+        <div id="app-sub" class="app-no-match">Vul wedstrijdinfo in</div>
+      </div>
+      <div class="hdr-btns">
+        <button class="hdr-btn" onclick="doReset()">↺ Reset</button>
+        <button class="hdr-btn" onclick="editTeamName()" title="Teamnaam aanpassen">✏️</button>
+        <button class="hdr-btn" onclick="showHome()">⬅</button>
+      </div>
+    </div>
+    <nav class="app-nav">
+      <button class="nav-btn active" onclick="switchTab('wedstrijd',this)"><span class="ni">⚔️</span><span class="nl">Wedstrijd</span></button>
+      <button class="nav-btn" onclick="switchTab('team',this)">          <span class="ni">👥</span><span class="nl">Team</span></button>
+      <button class="nav-btn" onclick="switchTab('score',this)">         <span class="ni">🏆</span><span class="nl">Score</span></button>
+      <button class="nav-btn" onclick="switchTab('rooster',this)">       <span class="ni">📅</span><span class="nl">Rooster</span></button>
+      <button class="nav-btn" onclick="switchTab('carpool',this)">       <span class="ni">🚗</span><span class="nl">Carpool</span></button>
+      <button class="nav-btn" onclick="switchTab('overview',this)">      <span class="ni">📋</span><span class="nl">Overzicht</span></button>
+    </nav>
+  </div>
+
+  <div id="toast"></div>
+
+  <div class="app-main">
+
+    <!-- WEDSTRIJD -->
+    <div id="tab-wedstrijd" class="pane active">
+      <div class="card">
+        <div class="card-title">⚔️ Wie tegen wie</div>
+        <div class="field-row"><label class="lbl">Onze ploeg</label><input class="inp" id="ourTeam" placeholder="bijv. Leeuwen U10" oninput="saveMatch()"/></div>
+        <div class="field-row"><label class="lbl">Tegenstander</label><input class="inp" id="opponent" placeholder="bijv. Eagles Basket" oninput="saveMatch()"/></div>
+        <div class="field-row">
+          <label class="lbl">Thuis of uit?</label>
+          <div class="toggle-row">
+            <button class="t-btn on" id="btn-thuis" onclick="setHomeAway('thuis')">🏠 Thuis</button>
+            <button class="t-btn" id="btn-uit" onclick="setHomeAway('uit')">✈️ Uit</button>
+          </div>
+        </div>
+        <div id="match-prev" class="match-prev" style="display:none">
+          <span class="mp-team" id="mp-left"></span>
+          <span class="mp-vs">VS</span>
+          <span class="mp-team" id="mp-right"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Datum & tijd</div>
+        <div class="two-col">
+          <div class="field-row"><label class="lbl">Datum</label><input class="inp" id="matchDate" type="date" oninput="saveMatch()"/></div>
+          <div class="field-row"><label class="lbl">Tijd</label><input class="inp" id="matchTime" type="time" oninput="saveMatch()"/></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📍 Locatie</div>
+        <div class="field-row"><label class="lbl">Naam sportzaal</label><input class="inp" id="venue" placeholder="bijv. Sporthal De Kuip" oninput="saveMatch()"/></div>
+        <div class="field-row"><label class="lbl">Adres</label><input class="inp" id="address" placeholder="bijv. Sportlaan 1, Amsterdam" oninput="saveMatch()"/></div>
+        <a id="maps-btn" href="#" target="_blank" class="maps-btn" style="display:none"><span>📍</span><span>Open in Google Maps</span><span class="maps-arr">↗</span></a>
+      </div>
+      <div class="card">
+        <div class="card-title">📣 Info</div>
+        <textarea class="inp" id="info" rows="4" placeholder="Verzameltijd, afspraken, bijzonderheden..." oninput="saveInfo()"></textarea>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,.2)">
+        <div class="card-title" style="color:var(--red)">⚠️ Teambeheer</div>
+        <button class="btn-danger-outline" onclick="showDeleteTeam()">🗑 Team verwijderen</button>
+      </div>
+    </div>
+
+    <!-- TEAM -->
+    <div id="tab-team" class="pane">
+      <div class="card">
+        <div class="sec-head"><span class="sec-icon">🟡</span><span class="sec-title">Scheidsrechter</span><button class="add-btn" onclick="openModal('referee')">+ Toevoegen</button></div>
+        <div id="referee-chips" class="chips"></div>
+      </div>
+      <div class="card">
+        <div class="sec-head"><span class="sec-icon">📋</span><span class="sec-title">Coach</span><button class="add-btn" onclick="openModal('coach')">+ Toevoegen</button></div>
+        <div id="coach-chips" class="chips"></div>
+      </div>
+      <div class="card">
+        <div class="sec-head"><span class="sec-icon">📝</span><span class="sec-title">Tafeldienst</span><span class="badge" id="tafel-badge">0 ✓</span><button class="add-btn" onclick="openModal('tafel')">+ Toevoegen</button></div>
+        <div id="tafel-chips" class="chips"></div>
+      </div>
+      <div class="card">
+        <div class="sec-head"><span class="sec-icon">🏃</span><span class="sec-title">Spelers</span><span class="badge" id="player-badge">0</span><button class="add-btn" onclick="openModal('player')">+ Toevoegen</button></div>
+        <div id="player-list"></div>
+      </div>
+    </div>
+
+    <!-- SCORE -->
+    <div id="tab-score" class="pane">
+      <div id="score-banner" class="score-banner" style="display:none">
+        <div class="sb-match" id="sb-match"></div>
+        <div class="sb-meta" id="sb-meta"></div>
+      </div>
+      <div class="card" style="padding:18px">
+        <div class="scoreboard">
+          <div class="score-team">
+            <input class="team-inp" id="homeName" value="Thuis" oninput="saveScore()"/>
+            <div class="score-num" id="homeScore">0</div>
+            <div class="score-btns">
+              <button class="s-btn" onclick="addScore('home',1)">+1</button>
+              <button class="s-btn" onclick="addScore('home',2)">+2</button>
+              <button class="s-btn" onclick="addScore('home',3)">+3</button>
+              <button class="s-btn min" onclick="addScore('home',-1)">−1</button>
+            </div>
+          </div>
+          <div class="score-team">
+            <input class="team-inp" id="awayName" value="Gasten" oninput="saveScore()"/>
+            <div class="score-num" id="awayScore">0</div>
+            <div class="score-btns">
+              <button class="s-btn" onclick="addScore('away',1)">+1</button>
+              <button class="s-btn" onclick="addScore('away',2)">+2</button>
+              <button class="s-btn" onclick="addScore('away',3)">+3</button>
+              <button class="s-btn min" onclick="addScore('away',-1)">−1</button>
+            </div>
+          </div>
+        </div>
+        <div class="score-sep">–</div>
+      </div>
+      <div id="tafel-strip" class="tafel-strip" style="display:none"></div>
+      <button class="reset-sm" onclick="confirmAction('Score resetten naar 0–0?', doResetScore)">🔄 Score resetten</button>
+    </div>
+
+    <!-- ROOSTER -->
+    <div id="tab-rooster" class="pane">
+      <div class="r-hdr">
+        <div><div class="r-title">Speelrooster</div><div class="r-sub">Slangensysteem · 5 in het veld · 8 rondes</div></div>
+        <div class="r-badge" id="r-badge" style="display:none"></div>
+      </div>
+      <div id="rooster-content"></div>
+    </div>
+
+    <!-- CARPOOL -->
+    <div id="tab-carpool" class="pane">
+      <div class="r-hdr">
+        <div><div class="r-title">🚗 Carpool</div><div class="r-sub">Geef aan hoeveel plekken je hebt</div></div>
+        <button class="add-btn-lg" onclick="openModal('carpool')">+ Ik bied aan</button>
+      </div>
+      <div id="carpool-list"></div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div id="tab-overview" class="pane">
+      <div class="card">
+        <div class="card-title">📋 Alles op een rij</div>
+        <div id="overview-content"></div>
+        <button class="refresh-btn" onclick="refreshData()">🔄 Vernieuwen</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="modal-add" class="modal-ov" onclick="closeModal('modal-add')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-ttl" id="modal-ttl">Toevoegen</div>
+    <input class="inp" id="modal-inp" onkeydown="if(event.key==='Enter')modalSave()"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('modal-add')">Annuleren</button>
+      <button class="btn-ok" onclick="modalSave()">✓ Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-carpool" class="modal-ov" onclick="closeModal('modal-carpool')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-ttl">🚗 Rit aanbieden</div>
+    <div class="field-g"><label class="lbl">Jouw naam</label><input class="inp" id="cp-name" placeholder="bijv. Ouder van Lisa"/></div>
+    <div class="field-g">
+      <label class="lbl">Aantal vrije plekken</label>
+      <div class="seat-row" id="seat-row">
+        <button class="seat-btn" onclick="selSeats(1)">1</button>
+        <button class="seat-btn on" onclick="selSeats(2)">2</button>
+        <button class="seat-btn" onclick="selSeats(3)">3</button>
+        <button class="seat-btn" onclick="selSeats(4)">4</button>
+        <button class="seat-btn" onclick="selSeats(5)">5</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('modal-carpool')">Annuleren</button>
+      <button class="btn-ok" onclick="saveCarpoolEntry()">✓ Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-confirm" class="modal-ov" onclick="closeModal('modal-confirm')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-ttl" id="confirm-ttl">Bevestigen</div>
+    <p id="confirm-msg" style="color:var(--txt2);font-size:14px;margin-bottom:4px;line-height:1.6"></p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('modal-confirm')">Annuleren</button>
+      <button class="btn-ok red" id="confirm-ok">Ja, doorgaan</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-pincheck" class="modal-ov" onclick="closeModal('modal-pincheck')">
+  <div class="modal-box pin-check-box" onclick="event.stopPropagation()">
+    <div class="modal-ttl" id="pincheck-ttl">Code invoeren</div>
+    <div class="pin-dots" id="pincheck-dots" style="justify-content:center;margin-bottom:20px">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pcKey('1')">1</button>
+      <button class="pin-key" onclick="pcKey('2')">2</button>
+      <button class="pin-key" onclick="pcKey('3')">3</button>
+      <button class="pin-key" onclick="pcKey('4')">4</button>
+      <button class="pin-key" onclick="pcKey('5')">5</button>
+      <button class="pin-key" onclick="pcKey('6')">6</button>
+      <button class="pin-key" onclick="pcKey('7')">7</button>
+      <button class="pin-key" onclick="pcKey('8')">8</button>
+      <button class="pin-key" onclick="pcKey('9')">9</button>
+      <button class="pin-key empty" disabled></button>
+      <button class="pin-key" onclick="pcKey('0')">0</button>
+      <button class="pin-key del" onclick="pcDel()">⌫</button>
+    </div>
+    <div class="pin-msg" id="pincheck-msg"></div>
+    <button class="btn-cancel" style="width:100%;margin-top:8px" onclick="closeModal('modal-pincheck')">Annuleren</button>
+  </div>
+</div>
+
+<!-- EDIT TEAM NAME MODAL -->
+<div id="modal-editname" class="modal-ov" onclick="closeModal('modal-editname')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-ttl">✏️ Teamnaam aanpassen</div>
+    <input class="inp" id="editname-inp" placeholder="Nieuwe teamnaam" maxlength="30"
+      onkeydown="if(event.key==='Enter')saveTeamName()"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('modal-editname')">Annuleren</button>
+      <button class="btn-ok" onclick="saveTeamName()">✓ Opslaan</button>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { initializeApp }                      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCGfWUqYCI-iaw5a0CLUifujOshjLmvB3I",
+  authDomain:        "basketball-30825.firebaseapp.com",
+  databaseURL:       "https://basketball-30825-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "basketball-30825",
+  storageBucket:     "basketball-30825.firebasestorage.app",
+  messagingSenderId: "110730116180",
+  appId:             "1:110730116180:web:3b840ecadbc79bdeb841c1"
+};
+
+window.ADMIN = "1300";
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+window._db  = db;
+window._ref = ref;
+window._set = set;
+window._get = get;
+window._del = remove;
+window.initApp();
+</script>
+
+<script>
+// ═══════════════════ STATE ═══════════════════
+let teams       = {};
+let currentTeam = null;
+let pinBuf      = "";
+let pcBuf       = "";
+let pcCallback  = null;
+let selSeatsN   = 2;
+let curModal    = null;
+let saveTimer   = null;
+
+const BLANK = () => ({
+  match:{ourTeam:"",opponent:"",homeAway:"thuis",venue:"",address:"",date:"",time:""},
+  info:"",
+  referees:[],coaches:[],tafelList:[],playerList:[],
+  selectedReferee:"",selectedCoach:"",selectedTafel:[],
+  players:{}, // {name: "green"|"red"|"none"} — green=speelt, red=aanwezig niet mee, none/missing=niet geselecteerd
+  attendance:{}, // legacy compat
+  carpool:[],
+  score:{home:0,away:0,homeName:"Thuis",awayName:"Gasten"}
+});
+
+// ═══════════════════ INIT ═══════════════════
+window.initApp = function() {
+  loadAll();
+};
+
+async function loadAll() {
+  try {
+    const snap = await window._get(window._ref(window._db,"teams"));
+    teams = snap.exists() ? (snap.val()||{}) : {};
+  } catch(e){ teams={}; }
+  showHome();
+}
+
+// ═══════════════════ SCREENS ═══════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  const el = document.getElementById('screen-'+id);
+  el.classList.add('active');
+  el.style.display = (id==='pin'||id==='loader') ? 'flex' : 'block';
+  window.scrollTo(0,0);
+}
+
+window.showHome = function() {
+  currentTeam=null;
+  renderHomeTeams();
+  showScreen('home');
+};
+
+window.showCreate = function() {
+  document.getElementById('create-name').value='';
+  ['ps1','ps2','ps3','ps4'].forEach(id=>document.getElementById(id).value='');
+  showScreen('create');
+  setTimeout(()=>document.getElementById('create-name').focus(),100);
+};
+
+function showPinScreen(teamId) {
+  currentTeam = teamId;
+  pinBuf = "";
+  const t = teams[teamId]||{};
+  document.getElementById('pin-emoji').textContent = t.emoji||'🏀';
+  document.getElementById('pin-name').textContent  = t.name||'Team';
+  setMsg('pin-msg','','');
+  updateDots('pin-dots',0,false);
+  showScreen('pin');
+}
+
+function showApp() {
+  const t = teams[currentTeam]||{};
+  document.getElementById('app-emoji').textContent  = t.emoji||'🏀';
+  document.getElementById('app-team-nm').textContent= t.name||'Team';
+  switchTab('wedstrijd', document.querySelector('.nav-btn'));
+  renderAll();
+  showScreen('app');
+}
+
+// ═══════════════════ HOME TEAMS ═══════════════════
+function renderHomeTeams() {
+  const el   = document.getElementById('teams-list');
+  const keys = Object.keys(teams).filter(k=>teams[k]&&teams[k].name);
+  if(!keys.length){
+    el.innerHTML=`<div class="no-teams-box"><span class="no-teams-icon">🏀</span><div class="no-teams-txt">Nog geen teams aangemaakt.<br>Maak je eerste team aan!</div></div>`;
+    return;
+  }
+  el.innerHTML = keys.map(id=>{
+    const t=teams[id];
+    const cnt=(t.playerList||[]).length;
+    return `<button class="team-btn" onclick="selectTeam('${id}')">
+      <span class="team-btn-emoji">🏀</span>
+      <div class="team-btn-info">
+        <div class="team-btn-name">${esc(t.name)}</div>
+        <div class="team-btn-meta">${cnt} speler${cnt!==1?'s':''} · tik om in te loggen</div>
+      </div>
+      <span class="team-btn-arr">›</span>
+    </button>`;
+  }).join('');
+}
+
+window.selectTeam = function(id) { showPinScreen(id); };
+
+// ═══════════════════ PIN LOGIN ═══════════════════
+window.pinKey = function(d) {
+  if(pinBuf.length>=4) return;
+  pinBuf+=d;
+  updateDots('pin-dots',pinBuf.length,false);
+  setMsg('pin-msg','','');
+  if(pinBuf.length===4) {
+    const t=teams[currentTeam];
+    if(pinBuf===(t.pin||'') || pinBuf===window.ADMIN) {
+      updateDots('pin-dots',4,'ok');
+      setMsg('pin-msg','✓ Code correct, laden...','var(--grn)');
+      loadTeamData().then(()=>showApp());
+    } else {
+      updateDots('pin-dots',4,'error');
+      setMsg('pin-msg','❌ Onjuiste code, probeer opnieuw','var(--red)');
+      setTimeout(()=>{pinBuf="";updateDots('pin-dots',0,false);setMsg('pin-msg','','');},1200);
+    }
+  }
+};
+window.pinDel = function() {
+  if(pinBuf.length>0){pinBuf=pinBuf.slice(0,-1);updateDots('pin-dots',pinBuf.length,false);}
+};
+function updateDots(cid,filled,state) {
+  document.getElementById(cid).querySelectorAll('.pin-dot').forEach((d,i)=>{
+    d.className='pin-dot'+(i<filled?(state==='ok'?' ok':state==='error'?' error':' filled'):'');
+  });
+}
+function setMsg(id,txt,color) {
+  const el=document.getElementById(id); el.textContent=txt; el.style.color=color||'';
+}
+
+// ═══════════════════ PIN CHECK (actions) ═══════════════════
+function requirePin(title, cb) {
+  pcBuf=""; pcCallback=cb;
+  document.getElementById('pincheck-ttl').textContent=title;
+  setMsg('pincheck-msg','','');
+  updateDots('pincheck-dots',0,false);
+  openModal('modal-pincheck');
+}
+window.pcKey = function(d) {
+  if(pcBuf.length>=4) return;
+  pcBuf+=d;
+  updateDots('pincheck-dots',pcBuf.length,false);
+  if(pcBuf.length===4){
+    const t=teams[currentTeam];
+    if(pcBuf===(t.pin||'')||pcBuf===window.ADMIN){
+      closeModal('modal-pincheck');
+      if(pcCallback) pcCallback();
+    } else {
+      updateDots('pincheck-dots',4,'error');
+      setMsg('pincheck-msg','❌ Onjuiste code','var(--red)');
+      setTimeout(()=>{pcBuf="";updateDots('pincheck-dots',0,false);setMsg('pincheck-msg','','');},1200);
+    }
+  }
+};
+window.pcDel = function() { if(pcBuf.length>0){pcBuf=pcBuf.slice(0,-1);updateDots('pincheck-dots',pcBuf.length,false);} };
+
+// ═══════════════════ CREATE TEAM ═══════════════════
+window.pnext = function(el,nid) {
+  el.value=el.value.replace(/\D/g,'');
+  if(el.value&&nid) document.getElementById(nid).focus();
+};
+window.createTeam = function() {
+  const name=document.getElementById('create-name').value.trim();
+  const pin=['ps1','ps2','ps3','ps4'].map(id=>document.getElementById(id).value.trim()).join('');
+  if(!name){flash('Vul een teamnaam in');return;}
+  if(!/^\d{4}$/.test(pin)){flash('Voer een 4-cijferige code in');return;}
+  const id='team_'+Date.now();
+  teams[id]={name,emoji:'🏀',color:'#f4831f',pin,...BLANK()};
+  window._set(window._ref(window._db,`teams/${id}`),teams[id])
+    .then(()=>{flash('✓ Team aangemaakt!');showHome();})
+    .catch(()=>flash('❌ Opslaan mislukt'));
+};
+
+// ═══════════════════ DELETE TEAM ═══════════════════
+window.showDeleteTeam = function() {
+  requirePin('Code voor verwijderen', ()=>{
+    confirmAction(`Team "${esc(teams[currentTeam]?.name)}" permanent verwijderen?`, ()=>{
+      window._del(window._ref(window._db,`teams/${currentTeam}`))
+        .then(()=>{delete teams[currentTeam];flash('✓ Team verwijderd');showHome();})
+        .catch(()=>flash('❌ Verwijderen mislukt'));
+    });
+  });
+};
+
+// ═══════════════════ LOAD / SAVE ═══════════════════
+async function loadTeamData() {
+  try {
+    const snap=await window._get(window._ref(window._db,`teams/${currentTeam}`));
+    if(snap.exists()){
+      const v=snap.val();
+      const base=BLANK();
+      teams[currentTeam]={
+        ...base,...v,
+        match:{...base.match,...(v.match||{})},
+        score:{...base.score,...(v.score||{})},
+        players:v.players||{},
+        carpool:v.carpool||[],
+        referees:v.referees||[],
+        coaches:v.coaches||[],
+        tafelList:v.tafelList||[],
+        playerList:v.playerList||[],
+        selectedReferee:v.selectedReferee||'',
+        selectedCoach:v.selectedCoach||'',
+        selectedTafel:v.selectedTafel||[],
+      };
+    }
+  } catch(e){ console.error('loadTeamData error:',e); }
+}
+
+async function refreshData() {
+  await loadTeamData();
+  renderAll();
+  flash('✓ Vernieuwd');
+}
+window.refreshData = refreshData;
+
+function saveTeamData() {
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    window._set(window._ref(window._db,`teams/${currentTeam}`),teams[currentTeam])
+      .then(()=>flash('✓ Opgeslagen'))
+      .catch(()=>flash('❌ Opslaan mislukt'));
+  },600);
+}
+function td(){return teams[currentTeam]||BLANK();}
+
+// ═══════════════════ TABS ═══════════════════
+window.switchTab = function(name,btn) {
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='rooster') renderRooster();
+  if(name==='overview') renderOverview();
+};
+
+// ═══════════════════ RENDER ALL ═══════════════════
+function renderAll(){
+  renderWedstrijd();renderTeam();renderScore();renderRooster();renderCarpool();renderOverview();updateHeader();
+}
+
+// ═══════════════════ HEADER ═══════════════════
+function updateHeader(){
+  const m=td().match||{};
+  const sub=document.getElementById('app-sub');
+  if(m.ourTeam&&m.opponent){
+    const h=m.homeAway==='thuis'?m.ourTeam:m.opponent;
+    const a=m.homeAway==='thuis'?m.opponent:m.ourTeam;
+    sub.className='app-match-txt';
+    sub.textContent=`${h} vs ${a} · ${m.homeAway==='thuis'?'🏠 Thuis':'✈️ Uit'}`;
+  } else {
+    sub.className='app-no-match';
+    sub.textContent='Vul wedstrijdinfo in';
+  }
+}
+
+// ═══════════════════ WEDSTRIJD ═══════════════════
+function renderWedstrijd(){
+  const m=td().match||{};
+  document.getElementById('ourTeam').value =m.ourTeam||'';
+  document.getElementById('opponent').value=m.opponent||'';
+  document.getElementById('matchDate').value=m.date||'';
+  document.getElementById('matchTime').value=m.time||'';
+  document.getElementById('venue').value   =m.venue||'';
+  document.getElementById('address').value =m.address||'';
+  document.getElementById('info').value    =td().info||'';
+  setHomeAway(m.homeAway||'thuis',false);
+  updateMatchPrev(); updateMapsBtn();
+}
+window.saveMatch=function(){
+  const d=td(),m=d.match;
+  m.ourTeam =document.getElementById('ourTeam').value;
+  m.opponent=document.getElementById('opponent').value;
+  m.date    =document.getElementById('matchDate').value;
+  m.time    =document.getElementById('matchTime').value;
+  m.venue   =document.getElementById('venue').value;
+  m.address =document.getElementById('address').value;
+  updateMatchPrev();updateMapsBtn();updateHeader();saveTeamData();
+};
+window.saveInfo=function(){td().info=document.getElementById('info').value;saveTeamData();};
+window.setHomeAway=function(v,save=true){
+  td().match.homeAway=v;
+  document.getElementById('btn-thuis').className='t-btn'+(v==='thuis'?' on':'');
+  document.getElementById('btn-uit').className='t-btn'+(v==='uit'?' on':'');
+  updateMatchPrev();updateHeader();if(save)saveTeamData();
+};
+function updateMatchPrev(){
+  const m=td().match||{};const p=document.getElementById('match-prev');
+  if(m.ourTeam&&m.opponent){
+    p.style.display='flex';
+    document.getElementById('mp-left').textContent =m.homeAway==='thuis'?m.ourTeam:m.opponent;
+    document.getElementById('mp-right').textContent=m.homeAway==='thuis'?m.opponent:m.ourTeam;
+  } else p.style.display='none';
+}
+function updateMapsBtn(){
+  const a=document.getElementById('address').value;const b=document.getElementById('maps-btn');
+  if(a.trim()){b.style.display='flex';b.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a);}
+  else b.style.display='none';
+}
+
+// ═══════════════════ TEAM ═══════════════════
+function renderTeam(){
+  renderChips('referee-chips',td().referees||[],td().selectedReferee?[td().selectedReferee]:[],'referee');
+  renderChips('coach-chips',  td().coaches||[], td().selectedCoach  ?[td().selectedCoach]  :[],'coach');
+  renderChips('tafel-chips',  td().tafelList||[],td().selectedTafel||[],'tafel');
+  document.getElementById('tafel-badge').textContent=`${(td().selectedTafel||[]).length} ✓`;
+  renderPlayers();
+}
+function renderChips(cid,list,sel,type){
+  const el=document.getElementById(cid);
+  if(!list||!list.length){el.innerHTML='<p class="empty-state">Nog niemand toegevoegd</p>';return;}
+  el.innerHTML=list.map(n=>{
+    const on=sel.includes(n);
+    return `<div class="chip${on?' on':''}">
+      <span class="chip-txt" onclick="toggleSel('${type}','${n}')">${on?'<b style="color:var(--org)">✓ </b>':''}${esc(n)}</span>
+      <span class="chip-del" onclick="confirmDelete('${type}','${n}')">×</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPlayers(){
+  const el=document.getElementById('player-list');
+  const pl=td().playerList||[];
+  if(!pl.length){el.innerHTML='<p class="empty-state">Nog geen spelers toegevoegd</p>';return;}
+  const ps=td().players||{};
+  const active=pl.filter(p=>ps[p]==='green').length;
+  document.getElementById('player-badge').textContent=`${active} speelt vandaag`;
+  el.innerHTML=`
+    <p class="player-hint">🟢 Groen = speelt mee &nbsp;|&nbsp; 🔴 Rood = afwezig &nbsp;|&nbsp; Geen vinkje = niet geselecteerd</p>
+    <div class="pgrid">${pl.map(p=>{
+      const st=ps[p]||'none';
+      return `<div class="prow ${st}">
+        <span class="pcheck" onclick="cyclePlayer('${p}')">
+          <span class="cb ${st==='green'?'green':st==='red'?'red':''}">${st==='green'?'✓':st==='red'?'✗':''}</span>
+        </span>
+        <span class="pname" onclick="cyclePlayer('${p}')">${esc(p)}</span>
+        <span class="row-del" onclick="confirmDelete('player','${p}')">×</span>
+      </div>`;
+    }).join('')}</div>
+    <div class="player-legend">
+      <span class="leg-item"><span class="leg-dot" style="background:var(--grn)"></span>Speelt mee</span>
+      <span class="leg-item"><span class="leg-dot" style="background:var(--red)"></span>Afwezig</span>
+      <span class="leg-item"><span class="leg-dot" style="background:#3a3a3a"></span>Niet geselecteerd</span>
+    </div>`;
+  const active2=pl.filter(p=>ps[p]==='green').length;
+  if(active2>0&&active2<5) el.insertAdjacentHTML('beforeend','<div class="warn-box">⚠️ Minimaal 5 spelers met groen vinkje nodig voor het rooster</div>');
+}
+
+// Cycle: none → green → red → none
+window.cyclePlayer=function(name){
+  if(!td().players) td().players={};
+  const cur=td().players[name]||'none';
+  td().players[name]= cur==='none'?'green': cur==='green'?'red':'none';
+  renderPlayers(); renderRooster(); saveTeamData();
+};
+
+window.toggleSel=function(type,name){
+  const d=td();
+  if(type==='referee') d.selectedReferee=d.selectedReferee===name?'':name;
+  else if(type==='coach') d.selectedCoach=d.selectedCoach===name?'':name;
+  else if(type==='tafel'){const c=d.selectedTafel||[];d.selectedTafel=c.includes(name)?c.filter(x=>x!==name):[...c,name];}
+  renderTeam();saveTeamData();
+};
+
+window.confirmDelete=function(type,name){
+  confirmAction(`"${esc(name)}" verwijderen?`,()=>removeItem(type,name));
+};
+
+function removeItem(type,name){
+  const d=td();
+  if(type==='referee'){d.referees=(d.referees||[]).filter(x=>x!==name);if(d.selectedReferee===name)d.selectedReferee='';}
+  if(type==='coach')  {d.coaches=(d.coaches||[]).filter(x=>x!==name);if(d.selectedCoach===name)d.selectedCoach='';}
+  if(type==='tafel')  {d.tafelList=(d.tafelList||[]).filter(x=>x!==name);d.selectedTafel=(d.selectedTafel||[]).filter(x=>x!==name);}
+  if(type==='player') {d.playerList=(d.playerList||[]).filter(x=>x!==name);if(d.players)delete d.players[name];}
+  renderTeam();renderRooster();saveTeamData();
+};
+
+// ═══════════════════ SCORE ═══════════════════
+function renderScore(){
+  const sc=td().score||{};const m=td().match||{};
+  document.getElementById('homeName').value=sc.homeName||'Thuis';
+  document.getElementById('awayName').value=sc.awayName||'Gasten';
+  document.getElementById('homeScore').textContent=sc.home||0;
+  document.getElementById('awayScore').textContent=sc.away||0;
+  const banner=document.getElementById('score-banner');
+  if(m.ourTeam&&m.opponent){
+    banner.style.display='block';
+    const h=m.homeAway==='thuis'?m.ourTeam:m.opponent;
+    const a=m.homeAway==='thuis'?m.opponent:m.ourTeam;
+    document.getElementById('sb-match').textContent=`${h} vs ${a}`;
+    const dt=m.date?new Date(m.date).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):'';
+    document.getElementById('sb-meta').textContent=[dt,m.time].filter(Boolean).join(' · ');
+  } else banner.style.display='none';
+  const ts=document.getElementById('tafel-strip');const tafel=td().selectedTafel||[];
+  if(tafel.length){
+    ts.style.display='flex';
+    ts.innerHTML=`<span class="tafel-lbl">Tafel:</span>`+tafel.map(n=>`<span class="tafel-pill">${esc(n)}</span>`).join('');
+  } else ts.style.display='none';
+}
+window.saveScore=function(){td().score.homeName=document.getElementById('homeName').value;td().score.awayName=document.getElementById('awayName').value;saveTeamData();};
+window.addScore=function(t,d){td().score[t]=Math.max(0,(td().score[t]||0)+d);document.getElementById(t+'Score').textContent=td().score[t];saveTeamData();};
+window.doResetScore=function(){td().score.home=0;td().score.away=0;renderScore();saveTeamData();};
+
+// ═══════════════════ ROOSTER ═══════════════════
+function buildSchedule(players,rounds=8){
+  if(!players||players.length<5)return[];
+  const q=[...players],out=[];
+  for(let r=0;r<rounds;r++){const v=q.splice(0,5);out.push({veld:v,bank:[...q]});q.push(...v);}
+  return out;
+}
+function renderRooster(){
+  // Only include players with green checkmark
+  const ps=td().players||{};
+  const pl=(td().playerList||[]).filter(p=>ps[p]==='green');
+  const badge=document.getElementById('r-badge');
+  const content=document.getElementById('rooster-content');
+  if(pl.length>=5){
+    badge.style.display='block';badge.textContent=`${pl.length} spelers`;
+    const sch=buildSchedule(pl,8);
+    content.innerHTML=`<div class="t-wrap"><table>
+      <thead><tr>
+        <th class="th-r">R</th>
+        <th class="th">🟢 In het veld (5)</th>
+        <th class="th">⚪ Bank</th>
+      </tr></thead>
+      <tbody>${sch.map((r,i)=>`<tr style="background:${i%2===0?'#111':'#0d0d0d'}">
+        <td class="td-r"><div class="r-num">${i+1}</div></td>
+        <td class="td-v">${r.veld.map(p=>`<div class="sp-row"><span class="dot-g"></span><span class="sp-nm">${esc(p)}</span></div>`).join('')}</td>
+        <td class="td-b">${r.bank.length===0?'<span style="color:#444;font-size:12px">—</span>':r.bank.map(p=>`<div class="sp-row"><span class="dot-w"></span><span class="sp-nm-b">${esc(p)}</span></div>`).join('')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="legend-row">
+      <span class="leg-i"><span class="dot-g"></span>Veld</span>
+      <span class="leg-i"><span class="dot-w"></span>Bank</span>
+      <span style="color:var(--txt3);font-size:11px">Veldspelers schuiven elke ronde naar de bank.</span>
+    </div>`;
+  } else {
+    badge.style.display='none';
+    const needed=pl.length<5?`Nog ${5-pl.length} speler${5-pl.length!==1?'s':''} nodig`:'';
+    content.innerHTML=`<div class="card" style="text-align:center;padding:32px;color:var(--txt3)">
+      <div style="font-size:40px;margin-bottom:12px;opacity:.3">📅</div>
+      <div style="font-size:14px">Geef minimaal <strong style="color:var(--org)">5 spelers</strong> een groen vinkje om het rooster te zien.</div>
+      ${needed?`<div style="margin-top:8px;font-size:13px;color:var(--org)">${needed}</div>`:''}
+    </div>`;
+  }
+}
+
+// ═══════════════════ CARPOOL ═══════════════════
+function renderCarpool(){
+  const el=document.getElementById('carpool-list');
+  const trips=td().carpool||[];
+  if(!trips.length){
+    el.innerHTML=`<div class="empty-cp"><span class="empty-cp-icon">🚗</span><div style="color:var(--txt3);font-size:14px;margin-bottom:16px">Nog niemand heeft een rit aangeboden.</div><button class="add-btn-lg" onclick="openModal('carpool')">+ Ik bied een rit aan</button></div>`;
+    return;
+  }
+  el.innerHTML=trips.map(c=>`<div class="cp-card">
+    <div>
+      <div class="cp-name">${esc(c.name)}</div>
+      <div class="cp-seats">${'🧍'.repeat(Math.min(c.seats,5))}<span class="cp-count">${c.seats} ${c.seats===1?'plek':'plekken'}</span></div>
+    </div>
+    <button class="cp-del" onclick="confirmDelete('carpool',${c.id})">×</button>
+  </div>`).join('')+`<button class="add-btn-lg" style="width:100%;margin-top:4px" onclick="openModal('carpool')">+ Ik bied ook aan</button>`;
+}
+
+// override confirmDelete for carpool (uses id not name)
+const _origConfirmDelete = window.confirmDelete;
+window.confirmDelete = function(type,nameOrId){
+  if(type==='carpool'){
+    confirmAction('Deze rit verwijderen?',()=>{
+      td().carpool=(td().carpool||[]).filter(c=>c.id!==nameOrId);
+      renderCarpool();saveTeamData();
+    });
+  } else _origConfirmDelete(type,nameOrId);
+};
+
+window.selSeats=function(n){selSeatsN=n;document.querySelectorAll('.seat-btn').forEach((b,i)=>b.className='seat-btn'+(i+1===n?' on':''));};
+window.saveCarpoolEntry=function(){
+  const name=document.getElementById('cp-name').value.trim();if(!name)return;
+  if(!td().carpool)td().carpool=[];
+  td().carpool.push({name,seats:selSeatsN,id:Date.now()});
+  closeModal('modal-carpool');document.getElementById('cp-name').value='';
+  renderCarpool();saveTeamData();flash('✓ Rit toegevoegd!');
+};
+
+// ═══════════════════ OVERVIEW ═══════════════════
+function renderOverview(){
+  const el=document.getElementById('overview-content');
+  const d=td();const m=d.match||{};const sc=d.score||{};
+  const ps=d.players||{};
+  const mapsUrl=m.address?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(m.address):'';
+  let html='';
+
+  // Match
+  if(m.ourTeam||m.date||m.venue){
+    const h=m.homeAway==='thuis'?m.ourTeam:m.opponent;
+    const a=m.homeAway==='thuis'?m.opponent:m.ourTeam;
+    const dt=m.date?new Date(m.date).toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'long'}):'';
+    html+=`<div class="ov-match-box">
+      ${m.ourTeam&&m.opponent?`<div class="ov-matchline"><span class="ov-team">${esc(h)}</span><span class="ov-vs">VS</span><span class="ov-team">${esc(a)}</span></div>`:''}
+      <div class="ov-metas">
+        ${(dt||m.time)?`<span class="ov-meta">📅 ${dt} ${m.time}</span>`:''}
+        <span class="ov-meta" style="color:${m.homeAway==='thuis'?'var(--grn)':'var(--org)'}">${m.homeAway==='thuis'?'🏠 Thuis':'✈️ Uit'}</span>
+      </div>
+      ${(m.venue||m.address)?`<div class="ov-loc">
+        <span class="ov-loc-txt">${[m.venue,m.address].filter(Boolean).join(' · ')}</span>
+        ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="maps-mini">Maps ↗</a>`:''}
+      </div>`:''}
+    </div>`;
+  }
+
+  // Spelers
+  const groene=(d.playerList||[]).filter(p=>ps[p]==='green');
+  const rode  =(d.playerList||[]).filter(p=>ps[p]==='red');
+  html+=`<div class="ov-block">
+    <div class="ov-lbl" style="margin-bottom:8px">🏃 Speelt mee (${groene.length})</div>
+    ${groene.length===0?'<p style="color:var(--txt3);font-size:13px">Nog niemand geselecteerd</p>':
+    `<div class="ov-players-grid">${groene.map((p,i)=>`<div class="ov-player"><span class="ov-num">${i+1}</span>${esc(p)}</div>`).join('')}</div>`}
+    ${rode.length?`<div class="ov-lbl" style="margin-top:12px;margin-bottom:6px;color:var(--red)">🔴 Afwezig</div><div style="display:flex;flex-wrap:wrap;gap:6px">${rode.map(p=>`<span style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171;font-size:12px;padding:3px 10px;border-radius:20px">${esc(p)}</span>`).join('')}</div>`:''}
+  </div>`;
+
+  // Score
+  html+=`<div class="ov-row"><span class="ov-lbl">🏆 Stand</span><span class="ov-score">${sc.home||0} – ${sc.away||0}</span></div>`;
+
+  // Info
+  if(d.info)
+    html+=`<div class="ov-block"><div class="ov-lbl" style="margin-bottom:6px">📣 Info</div><p style="color:var(--txt2);font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(d.info)}</p></div>`;
+
+  // Carpool
+  const trips=d.carpool||[];
+  if(trips.length)
+    html+=`<div class="ov-block"><div class="ov-lbl" style="margin-bottom:8px">🚗 Carpool</div><div style="display:flex;flex-direction:column;gap:6px">${trips.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--txt2)">${esc(c.name)}</span><span style="color:var(--org);font-size:13px;font-weight:700">${c.seats} ${c.seats===1?'plek':'plekken'}</span></div>`).join('')}</div></div>`;
+
+  el.innerHTML = html||'<p style="color:var(--txt3);font-size:14px">Vul wedstrijdinfo in om hier een overzicht te zien.</p>';
+}
+
+window.editTeamName = function() {
+  document.getElementById('editname-inp').value = teams[currentTeam]?.name || '';
+  document.getElementById('modal-editname').classList.add('open');
+  setTimeout(() => document.getElementById('editname-inp').focus(), 60);
+};
+window.saveTeamName = function() {
+  const val = document.getElementById('editname-inp').value.trim();
+  if (!val) return;
+  teams[currentTeam].name = val;
+  document.getElementById('app-team-nm').textContent = val;
+  closeModal('modal-editname');
+  saveTeamData();
+  flash('✓ Teamnaam opgeslagen');
+};
+window.doReset = function() {
+  requirePin('↺ Code voor reset', ()=>{
+    confirmAction('Alle vinkjes en score wissen? Namen blijven staan.', ()=>{
+      const d=td();
+      d.selectedReferee='';d.selectedCoach='';d.selectedTafel=[];
+      d.players={};d.score.home=0;d.score.away=0;
+      renderAll();saveTeamData();flash('✓ Reset gedaan');
+    });
+  });
+};
+
+// ═══════════════════ MODALS ═══════════════════
+window.openModal = function(type) {
+  curModal=type;
+  if(type==='carpool'){
+    document.getElementById('cp-name').value='';
+    selSeats(2);
+    document.getElementById('modal-carpool').classList.add('open');
+    setTimeout(()=>document.getElementById('cp-name').focus(),60);
+    return;
+  }
+  if(type==='modal-pincheck'||type==='modal-confirm'){
+    document.getElementById(type).classList.add('open');return;
+  }
+  const titles={referee:'🟡 Scheidsrechter toevoegen',coach:'📋 Coach toevoegen',tafel:'📝 Tafeldienst toevoegen',player:'🏃 Speler toevoegen'};
+  const phs={referee:'Naam scheidsrechter',coach:'Naam coach',tafel:'Naam persoon',player:'Naam speler'};
+  document.getElementById('modal-ttl').textContent=titles[type]||'Toevoegen';
+  document.getElementById('modal-inp').placeholder=phs[type]||'';
+  document.getElementById('modal-inp').value='';
+  document.getElementById('modal-add').classList.add('open');
+  setTimeout(()=>document.getElementById('modal-inp').focus(),60);
+};
+window.closeModal=function(id){document.getElementById(id).classList.remove('open');};
+
+window.modalSave=function(){
+  const val=document.getElementById('modal-inp').value.trim();if(!val)return;
+  const d=td();
+  if(curModal==='referee'&&!(d.referees||[]).includes(val)){if(!d.referees)d.referees=[];d.referees.push(val);}
+  if(curModal==='coach'  &&!(d.coaches||[]).includes(val)) {if(!d.coaches)d.coaches=[];d.coaches.push(val);}
+  if(curModal==='tafel'  &&!(d.tafelList||[]).includes(val)){if(!d.tafelList)d.tafelList=[];d.tafelList.push(val);}
+  if(curModal==='player' &&!(d.playerList||[]).includes(val)){if(!d.playerList)d.playerList=[];d.playerList.push(val);}
+  closeModal('modal-add');renderTeam();renderRooster();saveTeamData();flash('✓ Toegevoegd!');
+};
+
+function confirmAction(msg,cb){
+  document.getElementById('confirm-ttl').textContent='Bevestigen';
+  document.getElementById('confirm-msg').innerHTML=msg;
+  document.getElementById('confirm-ok').onclick=()=>{closeModal('modal-confirm');cb();};
+  document.getElementById('modal-confirm').classList.add('open');
+}
+window.confirmAction=confirmAction;
+
+// ═══════════════════ TOAST ═══════════════════
+let toastT;
+function flash(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2500);
+}
+
+// ═══════════════════ UTIL ═══════════════════
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
