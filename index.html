@@ -2,6 +2,11 @@
 <!--
   Basketball Manager — © Sjoerd v Room
   VERSIEBEHEER: bij elke wijziging APP_VERSION (bovenaan het tweede script-blok) ophogen; staat in de footer van het startscherm.
+  v1.2 (2026-10-12)  Delen-knop onderaan het startscherm (deelmenu, op pc link kopiëren)
+                     Update-melding zoals de tracker: checkt bij openen, terugkeren en elke 5 min
+                     Lopende wijziging wordt eerst opgeslagen vóór een update
+                     Fix: meldingen op start-/aanmaakscherm waren onzichtbaar (toast zat in team-scherm)
+                     Fix: wijziging vlak vóór terug naar startscherm ging verloren
   v1.1 (2026-10-12)  Spelersvolgorde met pijltjes omhoog/omlaag (bepaalt het slangenrooster)
                      Versienummer in footer
                      Verwijderen vraagt "Weet je het zeker?"
@@ -239,6 +244,29 @@ textarea.inp{resize:vertical;line-height:1.6;}
   box-shadow:0 8px 32px rgba(0,0,0,.6);
   animation:slideDown .2s ease;
 }
+
+/* ── DELEN + UPDATE-MELDING ── */
+.share-btn{
+  background:transparent;border:1px solid var(--bdr2);color:var(--txt3);
+  font-size:12px;font-weight:600;letter-spacing:.5px;padding:8px 22px;
+  border-radius:20px;margin-bottom:16px;
+}
+#updateBanner{
+  position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  max-width:536px;margin:0 auto;z-index:8500;
+  background:#1a1a1a;border:1.5px solid var(--org);border-radius:14px;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;
+  font-size:14px;color:#fff;box-shadow:0 8px 28px rgba(0,0,0,.6);
+  animation:fadeUp .25s ease;
+}
+.ub-txt{flex:1;min-width:0;line-height:1.35;}
+.ub-btn{
+  background:linear-gradient(135deg,var(--org),var(--org2));color:#fff;
+  border-radius:10px;padding:9px 12px;font-size:14px;font-weight:800;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;white-space:nowrap;
+}
+.ub-x{background:transparent;color:var(--txt3);font-size:18px;line-height:1;padding:6px 2px 6px 4px;}
+body.has-update{padding-bottom:88px;}
 
 /* ── CARDS ── */
 .card{
@@ -510,7 +538,7 @@ table{width:100%;border-collapse:collapse;}
       <span style="font-size:20px;font-weight:300">+</span> Nieuw team aanmaken
     </button>
   </div>
-  <div class="home-footer">© Sjoerd v Room — All rights reserved<div class="app-ver" id="app-ver"></div></div>
+  <div class="home-footer"><button class="share-btn" onclick="shareApp()">Delen</button><div>© Sjoerd v Room — All rights reserved</div><div class="app-ver" id="app-ver"></div></div>
 </div>
 
 <!-- PIN -->
@@ -591,8 +619,6 @@ table{width:100%;border-collapse:collapse;}
       <button class="nav-btn" onclick="switchTab('overview',this)">      <span class="ni">📋</span><span class="nl">Overzicht</span></button>
     </nav>
   </div>
-
-  <div id="toast"></div>
 
   <div class="app-main">
 
@@ -723,6 +749,9 @@ table{width:100%;border-collapse:collapse;}
   </div>
 </div>
 
+<!-- TOAST: buiten de schermen, zodat meldingen op elk scherm zichtbaar zijn -->
+<div id="toast"></div>
+
 <!-- MODALS -->
 <div id="modal-add" class="modal-ov" onclick="closeModal('modal-add')">
   <div class="modal-box" onclick="event.stopPropagation()">
@@ -833,8 +862,10 @@ window.initApp();
 
 <script>
 // ═══════════════════ VERSIE ═══════════════════
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
+// Na een automatische update staat ?v=x.x in de adresbalk: weghalen, zodat delen/bladwijzers schoon blijven
+if (/[?&]v=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
 
 // ═══════════════════ STATE ═══════════════════
 let lastMoved   = null;
@@ -846,6 +877,7 @@ let pcCallback  = null;
 let selSeatsN   = 2;
 let curModal    = null;
 let saveTimer   = null;
+let pendingSaveId = null;   // team waarvoor nog een opslag klaarstaat (vastgelegd bij de wijziging)
 
 const BLANK = () => ({
   match:{ourTeam:"",opponent:"",homeAway:"thuis",venue:"",address:"",date:"",time:""},
@@ -1056,15 +1088,26 @@ async function refreshData() {
 window.refreshData = refreshData;
 
 function saveTeamData() {
+  if (pendingSaveId && pendingSaveId !== currentTeam) writeTeamNow();   // ander team nog niet weggeschreven: eerst dat
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>{
-    try {
-      const data = teams[currentTeam];
-      window._set(window._ref(window._db,`teams/${currentTeam}`),{...data, players:encMap(data.players)})
-        .then(()=>flash('✓ Opgeslagen'))
-        .catch(e=>{console.error(e);flash('❌ Opslaan mislukt');});
-    } catch(e){ console.error(e); flash('❌ Opslaan mislukt'); }
-  },600);
+  pendingSaveId = currentTeam;
+  saveTimer = setTimeout(writeTeamNow, 600);
+}
+function writeTeamNow() {
+  const id = pendingSaveId; pendingSaveId = null;
+  if (!id || !teams[id]) return Promise.resolve();
+  try {
+    const data = teams[id];
+    return window._set(window._ref(window._db,`teams/${id}`),{...data, players:encMap(data.players)})
+      .then(()=>flash('✓ Opgeslagen'))
+      .catch(e=>{console.error(e);flash('❌ Opslaan mislukt');});
+  } catch(e){ console.error(e); flash('❌ Opslaan mislukt'); return Promise.resolve(); }
+}
+// Lopende opslag direct uitvoeren (vóór een update); max 2,5 s wachten zodat niets blijft hangen
+function flushSave() {
+  if (!pendingSaveId) return Promise.resolve();
+  clearTimeout(saveTimer);
+  return Promise.race([writeTeamNow(), new Promise(r=>setTimeout(r,2500))]);
 }
 function td(){return teams[currentTeam]||BLANK();}
 
@@ -1459,6 +1502,56 @@ function confirmAction(msg,cb,okLabel){
   document.getElementById('modal-confirm').classList.add('open');
 }
 window.confirmAction=confirmAction;
+
+// ═══════════════════ DELEN ═══════════════════
+const APP_URL = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : 'https://umop3p1sdn.github.io/basket/';
+window.shareApp = async function() {
+  if (navigator.share) {
+    try { await navigator.share({title:'Basketball Manager', text:'Basketball Manager: wedstrijd, opstelling, rooster en carpool.', url:APP_URL}); return; }
+    catch(e) { if (e && e.name === 'AbortError') return; }   // zelf geannuleerd → niets doen
+  }
+  try { await navigator.clipboard.writeText(APP_URL); flash('✓ Link gekopieerd'); }
+  catch(e) { window.prompt('Kopieer de link:', APP_URL); }
+};
+
+// ═══════════════════ UPDATE-CHECK (zelfde werking als de tracker) ═══════════════════
+// Haalt de eigen pagina vers van de server, leest daar APP_VERSION uit en vergelijkt met wat nu draait.
+// Anders → wegklikbare balk onderin. Eén plek bumpen (APP_VERSION) volstaat.
+let updateChecking = false;
+async function checkForUpdate() {
+  if (updateChecking || document.hidden || document.getElementById('updateBanner')) return;
+  updateChecking = true;
+  try {
+    const res = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' });
+    if (res && res.ok) {
+      const m = (await res.text()).match(/APP_VERSION\s*=\s*["']([^"']+)["']/);
+      if (m && m[1] && m[1] !== APP_VERSION) showUpdateBanner(m[1]);
+    }
+  } catch(e) { /* offline of fout → stil, geen melding */ }
+  updateChecking = false;
+}
+function showUpdateBanner(newVersion) {
+  if (document.getElementById('updateBanner')) return;
+  const bar = document.createElement('div');
+  bar.id = 'updateBanner';
+  bar.innerHTML = `<span class="ub-txt">🔄 Nieuwe versie ${esc(newVersion)} beschikbaar</span>` +
+    `<button class="ub-btn" id="doUpdateBtn">Automatische update</button>` +
+    `<button class="ub-x" id="closeUpdateBtn" aria-label="Sluiten">✕</button>`;
+  document.body.appendChild(bar);
+  document.body.classList.add('has-update');
+  document.getElementById('doUpdateBtn').onclick = () => doAutomaticUpdate(newVersion);
+  document.getElementById('closeUpdateBtn').onclick = () => { bar.remove(); document.body.classList.remove('has-update'); };
+}
+async function doAutomaticUpdate(newVersion) {
+  const btn = document.getElementById('doUpdateBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Bezig...'; }
+  await flushSave();   // lopende wijziging eerst opslaan
+  try { if ('caches' in window) { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } } catch(e) {}
+  location.replace(location.pathname + '?v=' + encodeURIComponent(newVersion));   // nieuw adres → altijd verse versie
+}
+setTimeout(checkForUpdate, 3000);                       // bij openen
+setInterval(checkForUpdate, 5 * 60 * 1000);             // elke 5 minuten
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });   // terug in de app
 
 // ═══════════════════ TOAST ═══════════════════
 let toastT;
