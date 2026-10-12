@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+<!--
+  Basketball Manager — © Sjoerd v Room
+  VERSIEBEHEER: bij elke wijziging APP_VERSION (bovenaan het tweede script-blok) ophogen; staat in de footer van het startscherm.
+  v1.1 (2026-10-12)  Spelersvolgorde met pijltjes omhoog/omlaag (bepaalt het slangenrooster)
+                     Versienummer in footer
+                     Verwijderen vraagt "Weet je het zeker?"
+                     Fix: namen met apostrof (D'Angelo) waren niet aan te klikken
+                     Fix: naam met punt (J. Jansen) liet het opslaan stil mislukken
+  v1.0               Live versie GitHub Pages (umop3p1sdn.github.io/basket)
+-->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -98,6 +108,7 @@ a{text-decoration:none;color:inherit;}
 }
 
 .home-footer{text-align:center;padding:28px 16px 24px;color:var(--txt3);font-size:11px;letter-spacing:.3px;}
+.app-ver{margin-top:6px;font-size:10px;color:#444;letter-spacing:1px;}
 
 /* ══════════════════════════════════════
    PIN SCREEN
@@ -312,7 +323,7 @@ textarea.inp{resize:vertical;line-height:1.6;}
 }
 .cb.green{background:var(--grn);border-color:var(--grn);color:#fff;}
 .cb.red{background:var(--red);border-color:var(--red);color:#fff;}
-.pname{flex:1;font-size:14px;font-weight:600;color:var(--txt);padding:11px 4px 11px 0;cursor:pointer;}
+.pname{flex:1;min-width:0;overflow-wrap:anywhere;font-size:14px;font-weight:600;color:var(--txt);padding:11px 4px 11px 0;cursor:pointer;}
 .att-btns{display:flex;gap:5px;margin-right:8px;}
 .att-btn{
   width:30px;height:30px;border:1.5px solid var(--bdr2);background:transparent;
@@ -320,7 +331,14 @@ textarea.inp{resize:vertical;line-height:1.6;}
 }
 .att-btn.green{background:rgba(34,197,94,.1);border-color:var(--grn);color:var(--grn);}
 .att-btn.red{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red);}
-.row-del{padding:11px 12px;color:var(--txt3);font-size:16px;border-left:1px solid var(--bdr2);cursor:pointer;flex-shrink:0;}
+.row-del{padding:11px 12px;color:var(--txt3);font-size:16px;border-left:1px solid var(--bdr2);cursor:pointer;flex-shrink:0;align-self:stretch;display:flex;align-items:center;}
+.row-moves{display:flex;align-self:stretch;border-left:1px solid var(--bdr2);flex-shrink:0;}
+.row-move{background:transparent;color:#555;min-width:32px;padding:0 9px;display:flex;align-items:center;justify-content:center;}
+.row-move svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.row-move:active{color:var(--org);transform:none;}
+.row-move:disabled{opacity:.3;cursor:default;}
+@keyframes movedFlash{from{box-shadow:inset 0 0 0 999px rgba(244,131,31,.14)}to{box-shadow:inset 0 0 0 999px rgba(244,131,31,0)}}
+.prow.moved{animation:movedFlash .8s ease-out;}
 .player-legend{display:flex;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--txt3);gap:12px;}
 .leg-item{display:flex;align-items:center;gap:5px;}
 .leg-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
@@ -492,7 +510,7 @@ table{width:100%;border-collapse:collapse;}
       <span style="font-size:20px;font-weight:300">+</span> Nieuw team aanmaken
     </button>
   </div>
-  <div class="home-footer">© Sjoerd v Room — All rights reserved</div>
+  <div class="home-footer">© Sjoerd v Room — All rights reserved<div class="app-ver" id="app-ver"></div></div>
 </div>
 
 <!-- PIN -->
@@ -814,7 +832,12 @@ window.initApp();
 </script>
 
 <script>
+// ═══════════════════ VERSIE ═══════════════════
+const APP_VERSION = '1.1';
+document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
+
 // ═══════════════════ STATE ═══════════════════
+let lastMoved   = null;
 let teams       = {};
 let currentTeam = null;
 let pinBuf      = "";
@@ -844,6 +867,7 @@ async function loadAll() {
   try {
     const snap = await window._get(window._ref(window._db,"teams"));
     teams = snap.exists() ? (snap.val()||{}) : {};
+    for (const id in teams) if (teams[id] && teams[id].players) teams[id].players = decMap(teams[id].players);
   } catch(e){ teams={}; }
   showHome();
 }
@@ -995,7 +1019,7 @@ window.showDeleteTeam = function() {
       window._del(window._ref(window._db,`teams/${currentTeam}`))
         .then(()=>{delete teams[currentTeam];flash('✓ Team verwijderd');showHome();})
         .catch(()=>flash('❌ Verwijderen mislukt'));
-    });
+    },'Ja, verwijderen');
   });
 };
 
@@ -1010,7 +1034,7 @@ async function loadTeamData() {
         ...base,...v,
         match:{...base.match,...(v.match||{})},
         score:{...base.score,...(v.score||{})},
-        players:v.players||{},
+        players:decMap(v.players),
         carpool:v.carpool||[],
         referees:v.referees||[],
         coaches:v.coaches||[],
@@ -1034,9 +1058,12 @@ window.refreshData = refreshData;
 function saveTeamData() {
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
-    window._set(window._ref(window._db,`teams/${currentTeam}`),teams[currentTeam])
-      .then(()=>flash('✓ Opgeslagen'))
-      .catch(()=>flash('❌ Opslaan mislukt'));
+    try {
+      const data = teams[currentTeam];
+      window._set(window._ref(window._db,`teams/${currentTeam}`),{...data, players:encMap(data.players)})
+        .then(()=>flash('✓ Opgeslagen'))
+        .catch(e=>{console.error(e);flash('❌ Opslaan mislukt');});
+    } catch(e){ console.error(e); flash('❌ Opslaan mislukt'); }
   },600);
 }
 function td(){return teams[currentTeam]||BLANK();}
@@ -1129,29 +1156,35 @@ function renderChips(cid,list,sel,type){
   el.innerHTML=list.map(n=>{
     const on=sel.includes(n);
     return `<div class="chip${on?' on':''}">
-      <span class="chip-txt" onclick="toggleSel('${type}','${n}')">${on?'<b style="color:var(--org)">✓ </b>':''}${esc(n)}</span>
-      <span class="chip-del" onclick="confirmDelete('${type}','${n}')">×</span>
+      <span class="chip-txt" onclick="toggleSel('${type}',${jsArg(n)})">${on?'<b style="color:var(--org)">✓ </b>':''}${esc(n)}</span>
+      <span class="chip-del" onclick="confirmDelete('${type}',${jsArg(n)})">×</span>
     </div>`;
   }).join('');
 }
 
+const CHEV_UP='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 7.5 6 4l3.5 3.5"/></svg>';
+const CHEV_DN='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
 function renderPlayers(){
   const el=document.getElementById('player-list');
   const pl=td().playerList||[];
-  if(!pl.length){el.innerHTML='<p class="empty-state">Nog geen spelers toegevoegd</p>';return;}
   const ps=td().players||{};
   const active=pl.filter(p=>ps[p]==='green').length;
   document.getElementById('player-badge').textContent=`${active} speelt vandaag`;
+  if(!pl.length){el.innerHTML='<p class="empty-state">Nog geen spelers toegevoegd</p>';return;}
   el.innerHTML=`
-    <p class="player-hint">🟢 Groen = speelt mee &nbsp;|&nbsp; 🔴 Rood = afwezig &nbsp;|&nbsp; Geen vinkje = niet geselecteerd</p>
-    <div class="pgrid">${pl.map(p=>{
+    <p class="player-hint">🟢 Groen = speelt mee &nbsp;|&nbsp; 🔴 Rood = afwezig &nbsp;|&nbsp; Geen vinkje = niet geselecteerd &nbsp;|&nbsp; Pijltjes = volgorde rooster</p>
+    <div class="pgrid">${pl.map((p,i)=>{
       const st=ps[p]||'none';
-      return `<div class="prow ${st}">
-        <span class="pcheck" onclick="cyclePlayer('${p}')">
+      return `<div class="prow ${st}${p===lastMoved?' moved':''}">
+        <span class="pcheck" onclick="cyclePlayer(${jsArg(p)})">
           <span class="cb ${st==='green'?'green':st==='red'?'red':''}">${st==='green'?'✓':st==='red'?'✗':''}</span>
         </span>
-        <span class="pname" onclick="cyclePlayer('${p}')">${esc(p)}</span>
-        <span class="row-del" onclick="confirmDelete('player','${p}')">×</span>
+        <span class="pname" onclick="cyclePlayer(${jsArg(p)})">${esc(p)}</span>
+        <span class="row-moves">
+          <button class="row-move" onclick="movePlayer(${jsArg(p)},-1)" aria-label="Omhoog"${i===0?' disabled':''}>${CHEV_UP}</button>
+          <button class="row-move" onclick="movePlayer(${jsArg(p)},1)" aria-label="Omlaag"${i===pl.length-1?' disabled':''}>${CHEV_DN}</button>
+        </span>
+        <span class="row-del" onclick="confirmDelete('player',${jsArg(p)})">×</span>
       </div>`;
     }).join('')}</div>
     <div class="player-legend">
@@ -1159,9 +1192,19 @@ function renderPlayers(){
       <span class="leg-item"><span class="leg-dot" style="background:var(--red)"></span>Afwezig</span>
       <span class="leg-item"><span class="leg-dot" style="background:#3a3a3a"></span>Niet geselecteerd</span>
     </div>`;
-  const active2=pl.filter(p=>ps[p]==='green').length;
-  if(active2>0&&active2<5) el.insertAdjacentHTML('beforeend','<div class="warn-box">⚠️ Minimaal 5 spelers met groen vinkje nodig voor het rooster</div>');
+  lastMoved=null;
+  if(active>0&&active<5) el.insertAdjacentHTML('beforeend','<div class="warn-box">⚠️ Minimaal 5 spelers met groen vinkje nodig voor het rooster</div>');
 }
+
+// Volgorde in de lijst = volgorde in het slangenrooster
+window.movePlayer=function(name,dir){
+  const pl=td().playerList||[];
+  const i=pl.indexOf(name), j=i+dir;
+  if(i<0||j<0||j>=pl.length) return;
+  [pl[i],pl[j]]=[pl[j],pl[i]];
+  lastMoved=name;
+  renderPlayers(); renderRooster(); saveTeamData();
+};
 
 // Cycle: none → green → red → none
 window.cyclePlayer=function(name){
@@ -1180,7 +1223,7 @@ window.toggleSel=function(type,name){
 };
 
 window.confirmDelete=function(type,name){
-  confirmAction(`"${esc(name)}" verwijderen?`,()=>removeItem(type,name));
+  confirmAction(`Weet je het zeker?<br><strong style="color:#fff">${esc(name)}</strong> wordt verwijderd.`,()=>removeItem(type,name),'Ja, verwijderen');
 };
 
 function removeItem(type,name){
@@ -1283,10 +1326,10 @@ function renderCarpool(){
 const _origConfirmDelete = window.confirmDelete;
 window.confirmDelete = function(type,nameOrId){
   if(type==='carpool'){
-    confirmAction('Deze rit verwijderen?',()=>{
+    confirmAction('Weet je het zeker?<br>Deze rit wordt verwijderd.',()=>{
       td().carpool=(td().carpool||[]).filter(c=>c.id!==nameOrId);
       renderCarpool();saveTeamData();
-    });
+    },'Ja, verwijderen');
   } else _origConfirmDelete(type,nameOrId);
 };
 
@@ -1408,9 +1451,10 @@ window.modalSave=function(){
   closeModal('modal-add');renderTeam();renderRooster();saveTeamData();flash('✓ Toegevoegd!');
 };
 
-function confirmAction(msg,cb){
+function confirmAction(msg,cb,okLabel){
   document.getElementById('confirm-ttl').textContent='Bevestigen';
   document.getElementById('confirm-msg').innerHTML=msg;
+  document.getElementById('confirm-ok').textContent=okLabel||'Ja, doorgaan';
   document.getElementById('confirm-ok').onclick=()=>{closeModal('modal-confirm');cb();};
   document.getElementById('modal-confirm').classList.add('open');
 }
@@ -1425,6 +1469,14 @@ function flash(msg){
 
 // ═══════════════════ UTIL ═══════════════════
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Naam veilig als argument in onclick="..." (apostrof/aanhalingsteken breken anders de klik)
+function jsArg(s){return esc(JSON.stringify(String(s)));}
+// Firebase-sleutels mogen geen . # $ / [ ] bevatten: spelersnamen als sleutel coderen bij opslaan, decoderen bij laden
+const FB_ENC={'%':'%25','.':'%2E','#':'%23','$':'%24','/':'%2F','[':'%5B',']':'%5D'};
+function encKey(k){return String(k).replace(/[%.#$\/\[\]]/g,c=>FB_ENC[c]);}
+function decKey(k){return String(k).replace(/%(25|2E|23|24|2F|5B|5D)/gi,m=>decodeURIComponent(m));}
+function encMap(o){const r={};for(const k in (o||{}))r[encKey(k)]=o[k];return r;}
+function decMap(o){const r={};for(const k in (o||{}))r[decKey(k)]=o[k];return r;}
 </script>
 </body>
 </html>
