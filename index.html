@@ -2,6 +2,7 @@
 <!--
   Basketball Manager — © Sjoerd v Room
   VERSIEBEHEER: bij elke wijziging APP_VERSION (bovenaan het tweede script-blok) ophogen; staat in de footer van het startscherm.
+  v1.4 (2026-11-04)  Versienummer onderaan beter leesbaar (kleur #444 → #888)
   v1.3 (2026-11-04)  "Coach" heet nu "Coach / teamcoördinator" (alleen tekst; opslag blijft coaches/selectedCoach)
                      Fix: "+ Toevoegen" bij Spelers stak op hele smalle telefoons (320 px) buiten de kaart
   v1.2 (2026-10-12)  Delen-knop onderaan het startscherm (deelmenu, op pc link kopiëren)
@@ -115,7 +116,7 @@ a{text-decoration:none;color:inherit;}
 }
 
 .home-footer{text-align:center;padding:28px 16px 24px;color:var(--txt3);font-size:11px;letter-spacing:.3px;}
-.app-ver{margin-top:6px;font-size:10px;color:#444;letter-spacing:1px;}
+.app-ver{margin-top:6px;font-size:10px;color:#888;letter-spacing:1px;}
 
 /* ══════════════════════════════════════
    PIN SCREEN
@@ -865,7 +866,7 @@ window.initApp();
 
 <script>
 // ═══════════════════ VERSIE ═══════════════════
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.4';
 document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
 // Na een automatische update staat ?v=x.x in de adresbalk: weghalen, zodat delen/bladwijzers schoon blijven
 if (/[?&]v=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
