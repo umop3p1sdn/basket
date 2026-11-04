@@ -2,6 +2,8 @@
 <!--
   Basketball Manager — © Sjoerd v Room
   VERSIEBEHEER: bij elke wijziging APP_VERSION (bovenaan het tweede script-blok) ophogen; staat in de footer van het startscherm.
+  v1.3 (2026-11-04)  "Coach" heet nu "Coach / teamcoördinator" (alleen tekst; opslag blijft coaches/selectedCoach)
+                     Fix: "+ Toevoegen" bij Spelers stak op hele smalle telefoons (320 px) buiten de kaart
   v1.2 (2026-10-12)  Delen-knop onderaan het startscherm (deelmenu, op pc link kopiëren)
                      Update-melding zoals de tracker: checkt bij openen, terugkeren en elke 5 min
                      Lopende wijziging wordt eerst opgeslagen vóór een update
@@ -281,7 +283,8 @@ body.has-update{padding-bottom:88px;}
 .card-title::before{content:'';width:3px;height:16px;background:var(--org);border-radius:2px;}
 
 /* ── SECTION HEAD ── */
-.sec-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.sec-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;row-gap:10px;}
+.sec-head .add-btn{margin-left:auto;}   /* past het niet op één regel (heel smal scherm): knop rechts op tweede regel */
 .sec-icon{font-size:18px;}
 .sec-title{font-weight:700;font-size:15px;flex:1;color:#fff;font-family:'Barlow Condensed',sans-serif;letter-spacing:.3px;}
 .badge{
@@ -671,7 +674,7 @@ table{width:100%;border-collapse:collapse;}
         <div id="referee-chips" class="chips"></div>
       </div>
       <div class="card">
-        <div class="sec-head"><span class="sec-icon">📋</span><span class="sec-title">Coach</span><button class="add-btn" onclick="openModal('coach')">+ Toevoegen</button></div>
+        <div class="sec-head"><span class="sec-icon">📋</span><span class="sec-title">Coach / teamcoördinator</span><button class="add-btn" onclick="openModal('coach')">+ Toevoegen</button></div>
         <div id="coach-chips" class="chips"></div>
       </div>
       <div class="card">
@@ -862,7 +865,7 @@ window.initApp();
 
 <script>
 // ═══════════════════ VERSIE ═══════════════════
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
 // Na een automatische update staat ?v=x.x in de adresbalk: weghalen, zodat delen/bladwijzers schoon blijven
 if (/[?&]v=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
@@ -1474,8 +1477,8 @@ window.openModal = function(type) {
   if(type==='modal-pincheck'||type==='modal-confirm'){
     document.getElementById(type).classList.add('open');return;
   }
-  const titles={referee:'🟡 Scheidsrechter toevoegen',coach:'📋 Coach toevoegen',tafel:'📝 Tafeldienst toevoegen',player:'🏃 Speler toevoegen'};
-  const phs={referee:'Naam scheidsrechter',coach:'Naam coach',tafel:'Naam persoon',player:'Naam speler'};
+  const titles={referee:'🟡 Scheidsrechter toevoegen',coach:'📋 Coach / teamcoördinator toevoegen',tafel:'📝 Tafeldienst toevoegen',player:'🏃 Speler toevoegen'};
+  const phs={referee:'Naam scheidsrechter',coach:'Naam coach of teamcoördinator',tafel:'Naam persoon',player:'Naam speler'};
   document.getElementById('modal-ttl').textContent=titles[type]||'Toevoegen';
   document.getElementById('modal-inp').placeholder=phs[type]||'';
   document.getElementById('modal-inp').value='';
