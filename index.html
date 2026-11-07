@@ -2,6 +2,7 @@
 <!--
   Basketball Manager — © Sjoerd v Room
   VERSIEBEHEER: bij elke wijziging APP_VERSION (bovenaan het tweede script-blok) ophogen; staat in de footer van het startscherm.
+  v1.5 (2026-11-07)  Scherm blijft aan zolang de app open is (Screen Wake Lock), ook na terugkeren in de app
   v1.4 (2026-11-04)  Versienummer onderaan beter leesbaar (kleur #444 → #888)
   v1.3 (2026-11-04)  "Coach" heet nu "Coach / teamcoördinator" (alleen tekst; opslag blijft coaches/selectedCoach)
                      Fix: "+ Toevoegen" bij Spelers stak op hele smalle telefoons (320 px) buiten de kaart
@@ -866,7 +867,7 @@ window.initApp();
 
 <script>
 // ═══════════════════ VERSIE ═══════════════════
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
 // Na een automatische update staat ?v=x.x in de adresbalk: weghalen, zodat delen/bladwijzers schoon blijven
 if (/[?&]v=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
@@ -1556,6 +1557,25 @@ async function doAutomaticUpdate(newVersion) {
 setTimeout(checkForUpdate, 3000);                       // bij openen
 setInterval(checkForUpdate, 5 * 60 * 1000);             // elke 5 minuten
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });   // terug in de app
+
+// ═══════════════════ SCHERM AAN ═══════════════════
+// Scherm blijft aan zolang de app open en in beeld is (Screen Wake Lock API).
+// De telefoon laat de lock los als de app naar de achtergrond gaat; bij terugkomen of de eerstvolgende tik vragen we hem opnieuw.
+// Geen ondersteuning of geweigerd → stil, de app werkt gewoon door.
+let wakeLock = null, wakeLockBusy = false;
+async function keepScreenOn() {
+  if (!('wakeLock' in navigator) || wakeLockBusy || document.visibilityState !== 'visible') return;
+  if (wakeLock && !wakeLock.released) return;
+  wakeLockBusy = true;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) { wakeLock = null; }
+  wakeLockBusy = false;
+}
+keepScreenOn();                                                               // bij openen
+document.addEventListener('visibilitychange', keepScreenOn);                  // terug in de app
+document.addEventListener('pointerdown', keepScreenOn, { passive: true });    // vangnet: sommige telefoons willen eerst een tik
 
 // ═══════════════════ TOAST ═══════════════════
 let toastT;
